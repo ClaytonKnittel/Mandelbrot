@@ -80,28 +80,24 @@ static void* _mandelbrot_worker_thread(void* args) {
     uint32_t frame, last_frame = 1000000, idx;
 
     complex_t in;
-    calc_t blx, bly, dx, dy, aspect_ratio, wid;
+    calc_t blx, bly, dx, dy, wid = width;
+    const calc_t aspect_ratio = (((calc_t) h) / ((calc_t) w));
     uint x, y;
 
+    const calc_t w_inv = 2. / (calc_t) w;
+    const calc_t h_inv = 2. / (calc_t) h;
 
     while (work_should_continue && (fi = atomic_fetch_add(&frame_idx, 1)) < max) {
         frame = fi / (w * h);
         idx = fi % (w * h);
-        if (frame != last_frame) {
-            wid = (frame == last_frame + 1) ? wid * scale : width * pow(scale, frame);
-            aspect_ratio = (((calc_t) h) / ((calc_t) w));
-
-            blx = center.re - wid;
-            bly = center.im - aspect_ratio * wid;
-
-            dx = 2 * wid / (calc_t) w;
-            dy = 2 * aspect_ratio * wid / (calc_t) h;
-        }
+        wid =   (frame == last_frame)     ? wid :
+                (frame == last_frame + 1) ? wid * scale :
+                                            width * pow(scale, frame);
         last_frame = frame;
         y = idx / w;
         x = idx % w;
-        in.re = blx + x * dx;
-        in.im = bly + y * dy;
+        in.re = center.re + wid * (x * w_inv - 1);
+        in.im = center.im + aspect_ratio * wid * (y * h_inv - 1);
         dst[fi] = divergence(in);
     }
     return NULL;
