@@ -1,4 +1,5 @@
 import java.io.*;
+import java.nio.ByteBuffer;
 
 final int its = 2000;
 final int P = 2;
@@ -15,6 +16,15 @@ final int density = 2;
 
 final String infile = "/users/claytonknittel/VSCode/algorithms/test.dat";
 
+public static double[] toDoubleArray(byte[] byteArray){
+    int times = Double.SIZE / Byte.SIZE;
+    double[] doubles = new double[byteArray.length / times];
+    for(int i=0;i<doubles.length;i++){
+        doubles[i] = ByteBuffer.wrap(byteArray, i*times, times).getDouble();
+    }
+    return doubles;
+}
+
 void settings() {
   try {
     DataInputStream in = new DataInputStream(new FileInputStream(infile));
@@ -30,14 +40,14 @@ void settings() {
     temp = new double[nframes][w * h];
     frames = new color[nframes][w * h];
     int frame = 0, idx = 0;
+    int scale = 8;
+    byte[] b = new byte[w * h * scale];
     while(frame < nframes) {
-      double d = in.readDouble();
-      temp[frame][idx] = d;
-      idx++;
-      if (idx == w * h) {
-        idx = 0;
-        frame++;
+      in.read(b);
+      for(int i=0; i<b.length / scale; i++){
+        temp[frame][i] = ByteBuffer.wrap(b, i*scale, scale).getDouble();
       }
+      frame++;
     }
     in.close();
     
